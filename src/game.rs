@@ -91,6 +91,7 @@ impl Game {
 
 
 pub fn move_snake(mut game: ResMut<Game>) {
+    age_snake_body(&mut game);
     move_snake_head(&mut game);
         if was_food_eaten(&game) {
             let could_spawn_food = spawn_food(&mut game);
@@ -107,12 +108,15 @@ pub fn move_snake(mut game: ResMut<Game>) {
 
 fn was_food_eaten(game: &Game) -> bool { game.food_pos == game.head_pos }
 
-fn move_snake_head(game: &mut Game) {
+fn age_snake_body(game: &mut Game) {
     game.grid.get_occupied_cells().iter().for_each(| cell_pos | {
         if let Some(Cell::SnakeBody { age }) = game.grid.get_cell(cell_pos.x, cell_pos.y) {
             game.grid.set_cell(Cell::SnakeBody { age: age + 1 }, cell_pos.x, cell_pos.y)
         }
     });
+}
+
+fn move_snake_head(game: &mut Game) {
     let move_dir = if game.input_direction == game.neck_direction.opposite() {
         game.neck_direction
     } else {
