@@ -4,7 +4,7 @@ use crate::grid::{GRID_SIZE, Grid, CellPos};
 use bevy::prelude::*;
 
 const BLOCK_SIZE_PX: f32 = 10.0;
-const TOP_LEFT_OFFSET: f32 = -(BLOCK_SIZE_PX * (GRID_SIZE as f32 / 2.0));
+const TOP_LEFT_OFFSET: f32 = (BLOCK_SIZE_PX / 2.0) - (BLOCK_SIZE_PX * (GRID_SIZE as f32 / 2.0));
 
 fn translate_grid_pos_to_screen(cell: &CellPos) -> Vec2 {
     let x: f32 = BLOCK_SIZE_PX * (cell.x as f32) + TOP_LEFT_OFFSET;
