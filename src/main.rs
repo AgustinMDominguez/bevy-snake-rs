@@ -1,19 +1,16 @@
 mod game;
+mod cell;
 mod grid;
-mod render;
 mod utils;
+mod render;
 
 use std::collections::HashMap;
 
-use crate::{
-    render::render_game,
-    game::{Game, move_snake}
-};
+use bevy::prelude::*;
+use bevy::DefaultPlugins;
 
-use bevy::{
-    prelude::*,
-    DefaultPlugins
-};
+use crate::render::render_game;
+use crate::game::Game;
 
 pub type Sze = u32;
 
@@ -34,13 +31,18 @@ impl Direction {
 #[derive(Resource)]
 struct StepTimer(Timer);
 
+#[derive(Resource)]
+struct PlayerInput {
+    input_direction: Direction
+}
+
 pub struct SnakePlugin;
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
 
-fn input_update(mut game: ResMut<Game>, keyboard_input: Res<Input<KeyCode>>) {
+fn input_update(mut input: ResMut<PlayerInput>, keyboard_input: Res<Input<KeyCode>>) {
     let dir_map = HashMap::from([
         (KeyCode::Up, Direction::Up),
         (KeyCode::Down, Direction::Down),
@@ -50,16 +52,21 @@ fn input_update(mut game: ResMut<Game>, keyboard_input: Res<Input<KeyCode>>) {
     if keyboard_input.any_just_pressed(dir_map.iter().map(| (&k, _) | k)) {
         for (&key_code, &direction) in dir_map.iter() {
             if keyboard_input.just_pressed(key_code) {
-                game.input_direction = direction;
+                input.input_direction = direction;
                 break;
             }
         }
     }
 }
 
-fn game_update(game: ResMut<Game>, time: Res<Time>, mut timer: ResMut<StepTimer>) {
-    if timer.0.tick(time.delta()).just_finished() && game.game_did_not_end() {
-        move_snake(game);
+fn game_update(
+    mut game: ResMut<Game>,
+    input: ResMut<PlayerInput>,
+    time: Res<Time>,
+    mut timer: ResMut<StepTimer>
+) {
+    if timer.0.tick(time.delta()).just_finished() && game.is_game_running() {
+        game.run_next_step(input.input_direction)
     }
 }
 
@@ -67,7 +74,7 @@ impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
         app
             .insert_resource(Game::new_game())
-            .insert_resource(StepTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
+            .insert_resource(StepTimer(Timer::from_seconds(0.1, TimerMode::Repeating)))
             .add_systems(Startup, setup)
             .add_systems(Update, (
                 game_update,
@@ -82,6 +89,7 @@ fn main() {
     App::new()
         .add_plugins((DefaultPlugins, SnakePlugin))
         .insert_resource(FixedTime::new_from_secs(1.0 / 60.0))
+        .insert_resource(PlayerInput { input_direction: Direction::Right })
         .add_systems(Update, bevy::window::close_on_esc)
         .run();
 }

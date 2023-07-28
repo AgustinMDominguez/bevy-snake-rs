@@ -1,232 +1,225 @@
 use rand::{rngs::ThreadRng, Rng, seq::SliceRandom};
+use bevy::prelude::Resource;
 
 use crate::{
-    Direction,
     Sze,
+    Direction,
     utils::min,
-    grid::{
-        Cell,
-        CellPos,
-        Grid,
-        ArrGrid,
-        GRID_SIZE
-    }
+    grid::{Grid, GRID_SIZE},
+    cell::{Cell, CellPos, CellContent}
 };
-
-use bevy::prelude::*;
 
 const START_SNAKE_LENGHT: usize = 3;
 
+#[derive(Debug, PartialEq)]
+enum GameState { Running, Win, Loss }
+
 #[derive(Resource)]
 pub struct Game {
-    pub input_direction: Direction,
-    pub grid: ArrGrid,
-    pub head_pos: CellPos,
-    tail_pos: CellPos,
-    food_pos: CellPos,
     score: Sze,
     neck_direction: Direction,
-    game_ended: Option<GameConclution>
+    game_state: GameState,
+    grid: Grid,
+    head_pos: CellPos,
+    tail_pos: CellPos,
+    food_pos: CellPos
 }
 
-#[derive(Debug)]
-enum GameConclution { Win, Loss }
-
-fn get_random_head_pos(rng: &mut ThreadRng) -> CellPos {
-    let x = rng.gen_range(START_SNAKE_LENGHT..(GRID_SIZE / 2));
-    let y = rng.gen_range(0..GRID_SIZE);
-    CellPos { x, y }
+struct SnakeBody {
+    pos: CellPos,
+    age: Sze
 }
 
 impl Game {
-    pub fn new_game() -> Game {
+    pub fn new_game() -> Self {
         let mut rng = rand::thread_rng();
         let head_pos = get_random_head_pos(&mut rng);
         let tail_pos = CellPos {
             x: head_pos.x + 1 - START_SNAKE_LENGHT,
             y: head_pos.y
         };
-        let mut grid = ArrGrid::new_empty_grid();
+        let mut grid = Grid::new_empty_grid();
         for offset in 0..START_SNAKE_LENGHT {
-            let body = Cell::SnakeBody { age: (START_SNAKE_LENGHT - offset) as Sze };
-            grid.set_cell(body, tail_pos.x + offset, tail_pos.y);
+            grid.set_cell(Cell {
+                pos: CellPos { x: tail_pos.x + offset, y: tail_pos.y },
+                content: CellContent::SnakeBody { age: (START_SNAKE_LENGHT - offset) as Sze }
+            });
         }
-        let food_pos = CellPos { x: (GRID_SIZE - head_pos.x)/2, y: rng.gen_range(0..GRID_SIZE) };
-        grid.set_cell(Cell::Food, food_pos.x, food_pos.y);
-        let game_ended = None;
+        let food_pos = CellPos {
+            x: (GRID_SIZE - head_pos.x) / 2,
+            y: rng.gen_range(0..GRID_SIZE)
+        };
+        grid.set_cell(Cell { pos: food_pos, content: CellContent::Food });
         Game {
             grid,
             head_pos,
             tail_pos,
             food_pos,
             score: START_SNAKE_LENGHT as Sze,
-            input_direction: Direction::Right,
             neck_direction: Direction::Right,
-            game_ended
+            game_state: GameState::Running
         }
     }
 
-    fn _get_state(&self) -> String {
-        let mut ret = String::new();
-        ret.push_str(format!("[head={:?},",self.head_pos).as_str());
-        ret.push_str(format!("tail={:?},",self.tail_pos).as_str());
-        ret.push_str(format!("neck_dir={:?},",self.neck_direction).as_str());
-        ret.push_str(format!("input_dir={:?},",self.input_direction).as_str());
-        ret.push_str(format!("game_ended={:?},",self.game_ended).as_str());
-        let occupied_cells = self
-            .grid
-            .get_occupied_cells()
+    pub fn run_next_step(&mut self, input_direction: Direction) {
+        self.age_snake_body();
+        self.move_snake_head(input_direction);
+        if self.was_food_eaten() {
+            let could_spawn_food = self.spawn_food();
+            self.score += 1;
+            if !could_spawn_food {
+                self.game_state= GameState::Win;
+            }
+        }
+        self.move_snake_tail();
+        self.log_game_state_if_finished();
+    }
+
+    fn age_snake_body(&mut self) {
+        self.get_occupied_cells().iter().for_each( | &cell | {
+            match cell.content {
+                CellContent::Food => {},
+                CellContent::SnakeBody { age } => {
+                    self.grid.set_cell(Cell {
+                        pos: cell.pos,
+                        content: CellContent::SnakeBody { age: age + 1 }
+                    });
+                }
+            }
+        });
+    }
+
+    fn move_snake_head(&mut self, input_direction: Direction) {
+        let move_dir = if input_direction == self.neck_direction.opposite() {
+            self.neck_direction
+        } else {
+            input_direction
+        };
+        let dir_vector = match move_dir {
+            Direction::Up => [0, 1],
+            Direction::Down => [0, -1],
+            Direction::Left => [-1, 0],
+            Direction::Right => [1, 0]
+        };
+        let ix = (self.head_pos.x as i64) + dir_vector[0];
+        let iy = (self.head_pos.y as i64) + dir_vector[1];
+        [ix, iy].iter().for_each(| &coord | {
+            if coord < 0 || coord >= (GRID_SIZE as i64) {
+                self.game_state = GameState::Loss;
+            }
+        });
+        let x = ix as usize;
+        let y = iy as usize;
+
+        let head_pos = CellPos { x, y };
+        if self.is_position_occupied_by_snake(head_pos) {
+            self.game_state = GameState::Loss;
+            return;
+        }
+        self.grid.set_cell(Cell { pos: head_pos, content: CellContent::SnakeBody { age: 1 } });
+        self.neck_direction = move_dir;
+        self.head_pos = head_pos;
+    }
+
+    fn log_game_state_if_finished(&self) {
+        if self.game_state != GameState::Running {
+            println!("{:?}!", self.game_state);
+        }
+    }
+
+    fn was_food_eaten(&self) -> bool { self.food_pos == self.head_pos }
+
+    fn is_position_occupied_by_snake(&self, pos: CellPos) -> bool {
+        matches!(self.grid.get_cell_content(pos), Some(CellContent::SnakeBody { .. }))
+    }
+
+    fn move_snake_tail(&mut self) {
+        let cur_tail = self.get_tail();
+        if self.score < cur_tail.age {
+            let new_tail = self.get_oldest_tail_neighbor();
+            self.grid.clear_cell(cur_tail.pos);
+            self.tail_pos = new_tail;
+        }
+    }
+
+    fn get_oldest_tail_neighbor(&self) -> CellPos {
+        let oldest_neighbor: Option<(CellPos, Sze)> = self.tail_pos
+            .get_neighbors()
             .iter()
-            .fold(String::new(), | str, &val | {
-                if let Some(Cell::SnakeBody { age }) = self.grid.get_cell(val.x, val.y) {
-                    let mut new_str = str;
-                    new_str.push_str(format!("({})", age).as_str());
-                    new_str
+            .filter_map(| &cell_pos | {
+                if let Some(CellContent::SnakeBody { age }) = self.grid.get_cell_content(cell_pos) {
+                    Some((cell_pos, age))
                 } else {
-                    str
+                    None
+                }
+            })
+            .fold(None, | prev, (cur_pos, cur_age) | {
+                match prev {
+                    Some((_, prev_age)) => {
+                        if prev_age < cur_age { Some((cur_pos, cur_age)) } else { prev }
+                    },
+                    None => Some((cur_pos, cur_age))
                 }
             });
-        ret.push_str(format!("(occupied_cells = {:?}]", occupied_cells).as_str());
-        ret
+        oldest_neighbor.unwrap().0
     }
 
-    pub fn game_did_not_end(&self) -> bool { self.game_ended.is_none() }
-}
+    fn get_tail(&self) -> SnakeBody {
+        if let Some(CellContent::SnakeBody { age }) = self.grid.get_cell_content(self.tail_pos) {
+            SnakeBody { pos: self.tail_pos, age }
+        } else {
+            panic!()
+        }
+    }
 
-
-pub fn move_snake(mut game: ResMut<Game>) {
-    age_snake_body(&mut game);
-    move_snake_head(&mut game);
-        if was_food_eaten(&game) {
-            let could_spawn_food = spawn_food(&mut game);
-            game.score += 1;
-            if !could_spawn_food {
-                game.game_ended = Some(GameConclution::Win);
+    fn spawn_food(&mut self) -> bool {
+        let mut rng = rand::thread_rng();
+        let mut is_food_spawned = false;
+        for _ in 1..20 {
+            let food_pos = CellPos { x: rng.gen_range(0..GRID_SIZE), y: rng.gen_range(0..GRID_SIZE) };
+            if self.grid.get_cell_content(food_pos).is_none() {
+                self.grid.set_cell(Cell { pos: food_pos, content: CellContent::Food });
+                self.food_pos = food_pos;
+                is_food_spawned = true;
+                break;
             }
         }
-        if let Some(game_ended) = &game.game_ended {
-            println!("{:?}!", game_ended);
+        if !is_food_spawned {
+            if let Some(&food_pos) = self.get_empty_cells_around_tail().choose(&mut rng) {
+                self.grid.set_cell(Cell { pos: food_pos, content: CellContent::Food });
+                self.food_pos = food_pos;
+                is_food_spawned = true;
+            };
         }
-        move_snake_tail(&mut game);
-}
-
-fn was_food_eaten(game: &Game) -> bool { game.food_pos == game.head_pos }
-
-fn age_snake_body(game: &mut Game) {
-    game.grid.get_occupied_cells().iter().for_each(| cell_pos | {
-        if let Some(Cell::SnakeBody { age }) = game.grid.get_cell(cell_pos.x, cell_pos.y) {
-            game.grid.set_cell(Cell::SnakeBody { age: age + 1 }, cell_pos.x, cell_pos.y)
-        }
-    });
-}
-
-fn move_snake_head(game: &mut Game) {
-    let move_dir = if game.input_direction == game.neck_direction.opposite() {
-        game.neck_direction
-    } else {
-        game.input_direction
-    };
-    let dir_vector = match move_dir {
-        Direction::Up => [0, 1],
-        Direction::Down => [0, -1],
-        Direction::Left => [-1, 0],
-        Direction::Right => [1, 0]
-    };
-    let ix = (game.head_pos.x as i64) + dir_vector[0];
-    let iy = (game.head_pos.y as i64) + dir_vector[1];
-    [ix, iy].iter().for_each(| &coord | {
-        if coord < 0 || coord >= (GRID_SIZE as i64) {
-            game.game_ended = Some(GameConclution::Loss);
-        }
-    });
-    let x = ix as usize;
-    let y = iy as usize;
-    if let Some(Cell::SnakeBody { .. }) = game.grid.get_cell(x, y) {
-        game.game_ended = Some(GameConclution::Loss);
-        return;
+        is_food_spawned
     }
-    game.grid.set_cell(Cell::SnakeBody { age: 1 }, x, y);
-    game.neck_direction = move_dir;
-    game.head_pos = CellPos { x, y};
-}
 
-fn move_snake_tail(game: &mut Game) {
-    if let Some(Cell::SnakeBody { age }) = game.grid.get_cell(game.tail_pos.x, game.tail_pos.y) {
-        if game.score < age {
-            if let Some((new_tail_pos, _)) = get_oldest_tail_neighbor(game) {
-                game.grid.clear_cell(game.tail_pos.x, game.tail_pos.y);
-                game.tail_pos = new_tail_pos;
-            } else {
-                panic!() // :/
+    fn get_empty_cells_around_tail(&self) -> Vec<CellPos> {
+        let search_area = 10;
+        let tail_pos = &self.tail_pos;
+        let mut empty_cells = vec!();
+        let low_x = tail_pos.x - min(tail_pos.x, search_area);
+        let high_x = min(GRID_SIZE, tail_pos.x + search_area);
+        let low_y = tail_pos.y - min(tail_pos.y, search_area);
+        let high_y = min(GRID_SIZE, tail_pos.y + search_area);
+        for x in low_x..high_x {
+            for y in low_y..high_y {
+                let pos: CellPos = CellPos { x, y };
+                if self.grid.is_cell_empty(pos) { empty_cells.push(pos); }
             }
         }
-    } else {
-        panic!() // Not ideal :/ maybe I did something wrong but idk what
+        empty_cells
     }
+
+    pub fn get_occupied_cells(&self) -> Vec<Cell> { self.grid.get_occupied_cells() }
+
+    pub fn get_head_position(&self) -> CellPos { self.head_pos }
+
+    pub fn is_game_running(&self) -> bool { self.game_state == GameState::Running }
 }
 
-fn get_cell_age(grid: &ArrGrid, pos: CellPos) -> Option<(CellPos, u32)> {
-    let cell = grid.get_cell(pos.x, pos.y)?;
-    if let Cell::SnakeBody { age } = cell {
-        Some((pos, age))
-    } else {
-        None
-    }
-}
-
-fn get_oldest_tail_neighbor(game: &Game) -> Option<(CellPos, Sze)> {
-    game.tail_pos
-    .get_valid_neighbors()
-    .iter()
-    .filter_map(| &pos | get_cell_age(&game.grid, pos))
-    .fold(None, | prev, (cur_pos, cur_age) | {
-        match prev {
-            Some((_, prev_age)) => {
-                if prev_age < cur_age { Some((cur_pos, cur_age)) } else { prev }
-            }
-            None => Some((cur_pos, cur_age))
-        }
-    })
-}
-
-fn spawn_food(game: &mut Game) -> bool {
-    let mut rng = rand::thread_rng();
-    let mut is_food_spawned = false;
-    for _ in 1..20 {
-        let x = rng.gen_range(0..GRID_SIZE);
-        let y = rng.gen_range(0..GRID_SIZE);
-        if game.grid.get_cell(x, y).is_none() {
-            game.grid.set_cell(Cell::Food, x, y);
-            game.food_pos = CellPos { x, y };
-            is_food_spawned = true;
-            break;
-        }
-    }
-    if !is_food_spawned {
-        let empty_cells = get_empty_cells_around_tail(&game.grid, &game.tail_pos);
-        if let Some(cell_pos) = empty_cells.choose(&mut rng) {
-            game.grid.set_cell(Cell::Food, cell_pos.x, cell_pos.y);
-            game.food_pos = CellPos { x: cell_pos.x, y: cell_pos.y};
-            is_food_spawned = true;
-        };
-    }
-    is_food_spawned
-}
-
-const AV_SPACE_SEARCH_AREA: usize = 10;
-
-fn get_empty_cells_around_tail(grid: &ArrGrid, tail_pos: &CellPos) -> Vec<CellPos> {
-    let mut empty_cells = vec!();
-    let low_x = tail_pos.x - min(tail_pos.x, AV_SPACE_SEARCH_AREA);
-    let high_x = min(GRID_SIZE, tail_pos.x + AV_SPACE_SEARCH_AREA);
-    let low_y = tail_pos.y - min(tail_pos.y, AV_SPACE_SEARCH_AREA);
-    let high_y = min(GRID_SIZE, tail_pos.y + AV_SPACE_SEARCH_AREA);
-    for x in low_x..high_x {
-        for y in low_y..high_y {
-            if grid.get_cell(x, y).is_none() {
-                empty_cells.push(CellPos { x, y })
-            }
-        }
-    }
-    empty_cells
+fn get_random_head_pos(rng: &mut ThreadRng) -> CellPos {
+    let x = rng.gen_range(START_SNAKE_LENGHT..(GRID_SIZE / 2));
+    let y = rng.gen_range(0..GRID_SIZE);
+    CellPos { x, y }
 }

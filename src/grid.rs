@@ -1,6 +1,8 @@
 use std::fmt::Debug;
-use crate::Sze;
-use bevy::prelude::{Component, Color};
+
+use bevy::prelude::Component;
+
+use crate::cell::{Cell, CellPos, CellContent};
 
 pub const GRID_SIZE: usize = 50;
 
@@ -8,84 +10,34 @@ pub const GRID_SIZE: usize = 50;
 pub struct OutOfBoundsError;
 
 #[derive(Component)]
-pub struct ArrGrid {
-    arr: [[Option<Cell>; GRID_SIZE]; GRID_SIZE]
+pub struct Grid {
+    arr: [[Option<CellContent>; GRID_SIZE]; GRID_SIZE]
 }
 
-pub trait Grid {
-    fn x_size(&self) -> usize;
-    fn y_size(&self) -> usize;
-    fn get_cell(&self, x: usize, y: usize) -> Option<Cell>;
-    fn get_occupied_cells(&self) -> Vec<CellPos>;
-    fn set_cell(&mut self, value: Cell, x: usize, y: usize);
-    fn clear_cell(&mut self, x: usize, y: usize);
-}
+impl Grid {
+    pub fn new_empty_grid() -> Self { Grid { arr: [[None; GRID_SIZE]; GRID_SIZE] }}
 
+    pub fn get_cell_content(&self, pos: CellPos) -> Option<CellContent> { self.arr[pos.x][pos.y] }
 
-impl ArrGrid {
-    pub fn new_empty_grid() -> ArrGrid {
-        ArrGrid { arr: [[None; GRID_SIZE]; GRID_SIZE] }
-    }
-}
+    pub fn is_cell_empty(&self, pos: CellPos) -> bool { self.arr[pos.x][pos.y].is_none() }
 
-impl Grid for ArrGrid {
-    fn x_size(&self) -> usize { GRID_SIZE }
-
-    fn y_size(&self) -> usize { GRID_SIZE }
-
-    fn get_cell(&self, x: usize, y: usize) -> Option<Cell> {
-        self.arr[x][y]
+    pub fn set_cell(&mut self, cell: Cell) {
+        self.arr[cell.pos.x][cell.pos.y] = Some(cell.content);
     }
 
-    fn get_occupied_cells(&self) -> Vec<CellPos> {
+    pub fn clear_cell(&mut self, pos: CellPos) {
+        self.arr[pos.x][pos.y] = None;
+    }
+
+    pub fn get_occupied_cells(&self) -> Vec<Cell> {
         let mut ret_cells = vec!();
         for x in 0..GRID_SIZE {
             for y in 0..GRID_SIZE {
-                if self.arr[x][y].is_some() {
-                    ret_cells.push(CellPos { x, y });
+                if let Some(content) = self.arr[x][y] {
+                    ret_cells.push(Cell { pos: CellPos { x, y }, content });
                 }
             }
         }
         ret_cells
-    }
-
-    fn set_cell(&mut self, value: Cell, x: usize, y: usize) {
-        self.arr[x][y] = Some(value);
-    }
-
-    fn clear_cell(&mut self, x: usize, y: usize) {
-        self.arr[x][y] = None;
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum Cell {
-    Food,
-    SnakeBody { age: Sze }
-}
-
-impl Cell {
-    pub fn get_color(&self) -> Color {
-        match self {
-            Self::Food => Color::RED,
-            Self::SnakeBody { .. } => Color::BLACK
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct CellPos {
-    pub x: usize,
-    pub y: usize
-}
-
-impl CellPos {
-    pub fn get_valid_neighbors(&self) -> Vec<CellPos> {
-        let mut neighbors = vec!();
-        if self.x > 0             { neighbors.push(CellPos { x: self.x - 1, y: self.y }) };
-        if self.x < GRID_SIZE - 1 { neighbors.push(CellPos { x: self.x + 1, y: self.y }) };
-        if self.y > 0             { neighbors.push(CellPos { x: self.x, y: self.y - 1 }) };
-        if self.y < GRID_SIZE - 1 { neighbors.push(CellPos { x: self.x, y: self.y + 1 }) };
-        neighbors
     }
 }
