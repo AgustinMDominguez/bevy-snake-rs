@@ -77,6 +77,8 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
 - `0.5.0`: First build that didn't have any glaring bugs.
 - `0.5.1`: bugfix:
   - The snake wasn't aligned with the grid
+- `0.5.2`: bugfix:
+  - The second piece of food didn't spawn
 
 # Features
 
