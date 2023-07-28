@@ -8,8 +8,9 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 use bevy::DefaultPlugins;
+use bevy::sprite::MaterialMesh2dBundle;
 
-use crate::render::render_game;
+use crate::render::{render_game, get_background_shape};
 use crate::game::Game;
 
 pub type Sze = u32;
@@ -38,8 +39,13 @@ struct PlayerInput {
 
 pub struct SnakePlugin;
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
     commands.spawn(Camera2dBundle::default());
+    commands.spawn(MaterialMesh2dBundle {
+        mesh: meshes.add(get_background_shape().into()).into(),
+        material: materials.add(ColorMaterial::from(Color::Rgba { red: 0.9, green: 0.9, blue: 0.9, alpha: 1.0 })),
+        ..default()
+    });
 }
 
 fn input_update(mut input: ResMut<PlayerInput>, keyboard_input: Res<Input<KeyCode>>) {

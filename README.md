@@ -79,6 +79,8 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
   - The snake wasn't aligned with the grid
 - `0.5.2`: bugfix:
   - The second piece of food didn't spawn
+- `0.5.3`: bugfix:
+  - The game crashed when the snake hit a wall
 
 # Features
 
@@ -95,5 +97,5 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
 
 # Known bugs
 
-- [ ] Game crashes when snake hits a wall
+- [X] Game crashes when snake hits a wall
 - [X] Sometimes food doesn't spawn

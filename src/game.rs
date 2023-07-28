@@ -64,6 +64,10 @@ impl Game {
     pub fn run_next_step(&mut self, input_direction: Direction) {
         self.age_snake_body();
         self.move_snake_head(input_direction);
+        if !self.is_game_running() {
+            println!("{:?}!", self.game_state);
+            return;
+        }
         if self.was_food_eaten() {
             let could_spawn_food = self.spawn_food();
             self.score += 1;
@@ -103,11 +107,12 @@ impl Game {
         };
         let ix = (self.head_pos.x as i64) + dir_vector[0];
         let iy = (self.head_pos.y as i64) + dir_vector[1];
-        [ix, iy].iter().for_each(| &coord | {
-            if coord < 0 || coord >= (GRID_SIZE as i64) {
-                self.game_state = GameState::Loss;
-            }
-        });
+        let grid_size = GRID_SIZE as i64;
+        if ix < 0 || iy < 0 || ix >= grid_size || iy >= grid_size {
+            self.game_state = GameState::Loss;
+            return;
+        }
+
         let x = ix as usize;
         let y = iy as usize;
 
