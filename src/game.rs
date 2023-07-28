@@ -68,21 +68,25 @@ impl Game {
 
     fn _get_state(&self) -> String {
         let mut ret = String::new();
-        ret.push_str(format!("(head={:?})",self.head_pos).as_str());
-        ret.push_str(format!("(tail={:?})",self.tail_pos).as_str());
-        ret.push_str(format!("(neck_dir={:?})",self.neck_direction).as_str());
-        ret.push_str(format!("(input_dir={:?})",self.input_direction).as_str());
-        ret.push_str(format!("(game_ended={:?})",self.game_ended).as_str());
-        let occupied_cells = self.grid.get_occupied_cells().iter().fold(String::new(), | str, &val | {
-            if let Some(Cell::SnakeBody { age }) = self.grid.get_cell(val.x, val.y) {
-                let mut new_str = str;
-                new_str.push_str(format!("({})", age).as_str());
-                new_str
-            } else {
-                str
-            }
-        });
-        ret.push_str(format!("(occupied_cells = {:?}", occupied_cells).as_str());
+        ret.push_str(format!("[head={:?},",self.head_pos).as_str());
+        ret.push_str(format!("tail={:?},",self.tail_pos).as_str());
+        ret.push_str(format!("neck_dir={:?},",self.neck_direction).as_str());
+        ret.push_str(format!("input_dir={:?},",self.input_direction).as_str());
+        ret.push_str(format!("game_ended={:?},",self.game_ended).as_str());
+        let occupied_cells = self
+            .grid
+            .get_occupied_cells()
+            .iter()
+            .fold(String::new(), | str, &val | {
+                if let Some(Cell::SnakeBody { age }) = self.grid.get_cell(val.x, val.y) {
+                    let mut new_str = str;
+                    new_str.push_str(format!("({})", age).as_str());
+                    new_str
+                } else {
+                    str
+                }
+            });
+        ret.push_str(format!("(occupied_cells = {:?}]", occupied_cells).as_str());
         ret
     }
 
@@ -178,11 +182,7 @@ fn get_oldest_tail_neighbor(game: &Game) -> Option<(CellPos, Sze)> {
     .fold(None, | prev, (cur_pos, cur_age) | {
         match prev {
             Some((_, prev_age)) => {
-                if prev_age < cur_age {
-                    Some((cur_pos, cur_age))
-                } else {
-                    prev
-                }
+                if prev_age < cur_age { Some((cur_pos, cur_age)) } else { prev }
             }
             None => Some((cur_pos, cur_age))
         }
@@ -197,6 +197,7 @@ fn spawn_food(game: &mut Game) -> bool {
         let y = rng.gen_range(0..GRID_SIZE);
         if game.grid.get_cell(x, y).is_none() {
             game.grid.set_cell(Cell::Food, x, y);
+            game.food_pos = CellPos { x, y };
             is_food_spawned = true;
             break;
         }
@@ -205,6 +206,7 @@ fn spawn_food(game: &mut Game) -> bool {
         let empty_cells = get_empty_cells_around_tail(&game.grid, &game.tail_pos);
         if let Some(cell_pos) = empty_cells.choose(&mut rng) {
             game.grid.set_cell(Cell::Food, cell_pos.x, cell_pos.y);
+            game.food_pos = CellPos { x: cell_pos.x, y: cell_pos.y};
             is_food_spawned = true;
         };
     }

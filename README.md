@@ -94,4 +94,4 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
 # Known bugs
 
 - [ ] Game crashes when snake hits a wall
-- [ ] Sometimes food doesn't spawn
+- [X] Sometimes food doesn't spawn

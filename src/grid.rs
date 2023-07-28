@@ -1,7 +1,6 @@
 use std::fmt::Debug;
-
-use bevy::prelude::{Component, Color};
 use crate::Sze;
+use bevy::prelude::{Component, Color};
 
 pub const GRID_SIZE: usize = 50;
 
