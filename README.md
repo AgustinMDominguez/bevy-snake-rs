@@ -81,6 +81,7 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
   - The second piece of food didn't spawn
 - `0.5.3`: bugfix:
   - The game crashed when the snake hit a wall
+- `0.6.0`: Implement boost hiting 'space'
 
 # Features
 
@@ -92,10 +93,11 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
 
 ## Nice to have
 
-- [ ] Speed up with hold button
+- [X] Speed up with hold button
 - [ ] Sound effects
 
 # Known bugs
 
 - [X] Game crashes when snake hits a wall
 - [X] Sometimes food doesn't spawn
+- [ ] Sometimes the games panics on spawn

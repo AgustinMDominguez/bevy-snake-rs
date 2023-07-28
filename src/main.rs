@@ -33,6 +33,9 @@ impl Direction {
 struct StepTimer(Timer);
 
 #[derive(Resource)]
+struct BoostTimer(Timer);
+
+#[derive(Resource)]
 struct PlayerInput {
     input_direction: Direction
 }
@@ -69,9 +72,15 @@ fn game_update(
     mut game: ResMut<Game>,
     input: ResMut<PlayerInput>,
     time: Res<Time>,
-    mut timer: ResMut<StepTimer>
+    mut tick_timer: ResMut<StepTimer>,
+    mut boost_timer: ResMut<BoostTimer>,
+    keyboard_input: Res<Input<KeyCode>>
 ) {
-    if timer.0.tick(time.delta()).just_finished() && game.is_game_running() {
+    let boost_timer_finished = boost_timer.0.tick(time.delta()).just_finished();
+    let boost_active = boost_timer_finished && keyboard_input.pressed(KeyCode::Space);
+    let tick_timer_finished = tick_timer.0.tick(time.delta()).just_finished();
+
+    if game.is_game_running() && (boost_active || tick_timer_finished) {
         game.run_next_step(input.input_direction)
     }
 }
@@ -80,7 +89,8 @@ impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
         app
             .insert_resource(Game::new_game())
-            .insert_resource(StepTimer(Timer::from_seconds(0.1, TimerMode::Repeating)))
+            .insert_resource(StepTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
+            .insert_resource(BoostTimer(Timer::from_seconds(0.04, TimerMode::Repeating)))
             .add_systems(Startup, setup)
             .add_systems(Update, (
                 game_update,
