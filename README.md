@@ -1,7 +1,7 @@
+![GitHub Repo Size](https://img.shields.io/github/repo-size/AgustinMDominguez/bevy-snake-rs)
 
 # Snake
 
-![GitHub Repo Size](https://img.shields.io/github/repo-size/AgustinMDominguez/bevy-snake-rs)
 
 This is a toy game to learn about game development, the Rust programming language, and the game engine Bevy.
 
