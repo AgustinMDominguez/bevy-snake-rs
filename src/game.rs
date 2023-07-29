@@ -1,15 +1,16 @@
 use rand::{rngs::ThreadRng, Rng, seq::SliceRandom};
-use bevy::prelude::Resource;
+use bevy::prelude::{Resource, EventWriter};
 
 use crate::{
     Sze,
     Direction,
     utils::min,
+    NewGameScore,
     grid::{Grid, GRID_SIZE},
-    cell::{Cell, CellPos, CellContent}
+    cell::{Cell, CellPos, CellContent},
 };
 
-const START_SNAKE_LENGHT: usize = 3;
+pub const START_SNAKE_LENGHT: usize = 3;
 
 #[derive(Debug, PartialEq)]
 enum GameState { Running, Win, Loss }
@@ -61,7 +62,7 @@ impl Game {
         }
     }
 
-    pub fn run_next_step(&mut self, input_direction: Direction) {
+    pub fn run_next_step(&mut self, input_direction: Direction, mut score_writer: EventWriter<NewGameScore>) {
         self.age_snake_body();
         self.move_snake_head(input_direction);
         if !self.is_game_running() {
@@ -71,6 +72,7 @@ impl Game {
         if self.was_food_eaten() {
             let could_spawn_food = self.spawn_food();
             self.score += 1;
+            score_writer.send(NewGameScore { score: self.score * 100 });
             if !could_spawn_food {
                 self.game_state= GameState::Win;
             }

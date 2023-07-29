@@ -1,6 +1,8 @@
 
 # Snake
 
+![GitHub Repo Size](https://img.shields.io/github/repo-size/AgustinMDominguez/bevy-snake-rs)
+
 This is a toy game to learn about game development, the Rust programming language, and the game engine Bevy.
 
 ## How to Run
@@ -82,11 +84,12 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
 - `0.5.3`: bugfix:
   - The game crashed when the snake hit a wall
 - `0.6.0`: Implement boost hiting 'space'
+- `0.7.0`: Implement Score
 
 # Features
 
 - [X] Basic snake game
-- [ ] Score
+- [X] Score
 - [ ] Game over screen
 - [ ] Restart button
 - [ ] Variable speed

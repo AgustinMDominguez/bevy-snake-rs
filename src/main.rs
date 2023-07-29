@@ -1,6 +1,7 @@
 mod game;
 mod cell;
 mod grid;
+mod text;
 mod utils;
 mod render;
 
@@ -10,24 +11,14 @@ use bevy::prelude::*;
 use bevy::DefaultPlugins;
 use bevy::sprite::MaterialMesh2dBundle;
 
-use crate::render::{render_game, get_background_shape};
-use crate::game::Game;
+use crate::{
+    render::{render_game, get_background_shape},
+    game::Game,
+    text::SnakeTexts,
+    utils::Direction
+};
 
 pub type Sze = u32;
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Direction { Left, Right, Up, Down }
-
-impl Direction {
-    fn opposite(&self) -> Self {
-        match self {
-            Direction::Down => Direction::Up,
-            Direction::Up => Direction::Down,
-            Direction::Left => Direction::Right,
-            Direction::Right => Direction::Left
-        }
-    }
-}
 
 #[derive(Resource)]
 struct StepTimer(Timer);
@@ -40,15 +31,27 @@ struct PlayerInput {
     input_direction: Direction
 }
 
+#[derive(Event)]
+pub struct NewGameScore{
+    pub score: Sze
+}
+
 pub struct SnakePlugin;
 
-fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut texts: ResMut<SnakeTexts>,
+    asset_server: Res<AssetServer>
+) {
     commands.spawn(Camera2dBundle::default());
     commands.spawn(MaterialMesh2dBundle {
         mesh: meshes.add(get_background_shape().into()).into(),
         material: materials.add(ColorMaterial::from(Color::Rgba { red: 0.9, green: 0.9, blue: 0.9, alpha: 1.0 })),
         ..default()
     });
+    texts.initialize(commands, asset_server);
 }
 
 fn input_update(mut input: ResMut<PlayerInput>, keyboard_input: Res<Input<KeyCode>>) {
@@ -73,6 +76,7 @@ fn game_update(
     input: ResMut<PlayerInput>,
     time: Res<Time>,
     mut tick_timer: ResMut<StepTimer>,
+    score_writer: EventWriter<NewGameScore>,
     mut boost_timer: ResMut<BoostTimer>,
     keyboard_input: Res<Input<KeyCode>>
 ) {
@@ -81,7 +85,21 @@ fn game_update(
     let tick_timer_finished = tick_timer.0.tick(time.delta()).just_finished();
 
     if game.is_game_running() && (boost_active || tick_timer_finished) {
-        game.run_next_step(input.input_direction)
+        game.run_next_step(input.input_direction, score_writer);
+    }
+}
+
+fn score_update(
+    texts: ResMut<SnakeTexts>,
+    mut events: EventReader<NewGameScore>,
+    mut score_text_query: Query<(Entity, &mut Text)>
+) {
+    if !events.is_empty() {
+        if let Ok(mut text) = score_text_query.get_component_mut::<Text>(texts.score) {
+            for event in events.iter() {
+                text.sections[0].value = event.score.to_string();
+            }
+        }
     }
 }
 
@@ -90,11 +108,14 @@ impl Plugin for SnakePlugin {
         app
             .insert_resource(Game::new_game())
             .insert_resource(StepTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
-            .insert_resource(BoostTimer(Timer::from_seconds(0.04, TimerMode::Repeating)))
+            .insert_resource(BoostTimer(Timer::from_seconds(0.08, TimerMode::Repeating)))
+            .insert_resource(SnakeTexts::new())
+            .add_event::<NewGameScore>()
             .add_systems(Startup, setup)
             .add_systems(Update, (
                 game_update,
                 input_update,
+                score_update,
                 render_game.after(game_update)
             )
         );
