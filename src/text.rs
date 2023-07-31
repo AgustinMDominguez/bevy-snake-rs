@@ -6,7 +6,7 @@ use bevy::{
 };
 
 use crate::{render::get_score_transform, RESTART_KEY, START_GAME_KEY, BOOST_GAME_KEY};
-use crate::game::START_SNAKE_LENGHT;
+use crate::simulation::START_SNAKE_LENGHT;
 
 #[derive(Resource)]
 pub struct SnakeTexts {

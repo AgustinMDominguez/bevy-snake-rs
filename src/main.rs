@@ -1,4 +1,4 @@
-mod game;
+mod simulation;
 mod cell;
 mod grid;
 mod text;
@@ -14,7 +14,7 @@ use bevy::sprite::MaterialMesh2dBundle;
 
 use crate::{
     render::{render_game, get_background_shape},
-    game::Sim,
+    simulation::Sim,
     text::SnakeTexts,
     utils::Direction
 };
