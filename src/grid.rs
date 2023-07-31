@@ -29,6 +29,14 @@ impl Grid {
         self.arr[pos.x][pos.y] = None;
     }
 
+    pub fn clear_grid(&mut self) {
+        for x in 0..GRID_SIZE {
+            for y in 0..GRID_SIZE {
+                self.arr[x][y] = None;
+            }
+        }
+    }
+
     pub fn get_occupied_cells(&self) -> Vec<Cell> {
         let mut ret_cells = vec!();
         for x in 0..GRID_SIZE {

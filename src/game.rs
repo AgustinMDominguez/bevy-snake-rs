@@ -6,6 +6,7 @@ use crate::{
     Direction,
     utils::min,
     FoodEaten,
+    GameOver,
     grid::{Grid, GRID_SIZE},
     cell::{Cell, CellPos, CellContent},
 };
@@ -13,8 +14,8 @@ use crate::{
 pub const START_SNAKE_LENGHT: usize = 3;
 const SCORE_BASE: Sze = 100;
 
-#[derive(Debug, PartialEq)]
-enum GameState { Running, Win, Loss }
+#[derive(Debug, PartialEq, Clone)]
+pub enum GameState { Running, Win, Loss }
 
 #[derive(Resource)]
 pub struct Game {
@@ -34,34 +35,36 @@ struct SnakeBody {
     age: Sze
 }
 
+struct GameInitialization {
+    eaten_food: Sze,
+    score: Sze,
+    score_multiplier: Sze,
+    neck_direction: Direction,
+    game_state: GameState,
+    head_pos: CellPos,
+    tail_pos: CellPos,
+    food_pos: CellPos
+}
+
 impl Game {
     pub fn new_game() -> Self {
-        let mut rng = rand::thread_rng();
-        let head_pos = get_random_head_pos(&mut rng);
-        let tail_pos = CellPos {
-            x: head_pos.x + 1 - START_SNAKE_LENGHT,
-            y: head_pos.y
-        };
         let mut grid = Grid::new_empty_grid();
-        for offset in 0..START_SNAKE_LENGHT {
-            grid.set_cell(Cell {
-                pos: CellPos { x: tail_pos.x + offset, y: tail_pos.y },
-                content: CellContent::SnakeBody { age: (START_SNAKE_LENGHT - offset) as Sze }
-            });
-        }
-        let food_pos = CellPos {
-            x: (GRID_SIZE - head_pos.x) / 2,
-            y: rng.gen_range(0..GRID_SIZE)
-        };
-        grid.set_cell(Cell { pos: food_pos, content: CellContent::Food });
-        let score_multiplier = 1;
-        let eaten_food = START_SNAKE_LENGHT as Sze;
+        let GameInitialization {
+            eaten_food,
+            score,
+            score_multiplier,
+            neck_direction,
+            game_state,
+            head_pos,
+            tail_pos,
+            food_pos
+        } = get_random_game_start(&mut grid);
         Game {
             eaten_food,
             score_multiplier,
-            score: eaten_food * score_multiplier * SCORE_BASE,
-            neck_direction: Direction::Right,
-            game_state: GameState::Running,
+            score,
+            neck_direction,
+            game_state,
             grid,
             head_pos,
             tail_pos,
@@ -69,11 +72,29 @@ impl Game {
         }
     }
 
-    pub fn run_next_step(&mut self, input_direction: Direction, score_writer: EventWriter<FoodEaten>) {
+    pub fn set_random_initial_state(&mut self) {
+        self.grid.clear_grid();
+        let new_game = get_random_game_start(&mut self.grid);
+        self.eaten_food = new_game.eaten_food;
+        self.score = new_game.score;
+        self.score_multiplier = new_game.score_multiplier;
+        self.neck_direction = new_game.neck_direction;
+        self.game_state = new_game.game_state;
+        self.head_pos = new_game.head_pos;
+        self.tail_pos = new_game.tail_pos;
+        self.food_pos = new_game.food_pos;
+    }
+
+    pub fn run_next_step(
+        &mut self,
+        input_direction: Direction,
+        score_writer: EventWriter<FoodEaten>,
+        mut game_over_writer: EventWriter<GameOver>
+    ) {
         self.age_snake_body();
         self.move_snake_head(input_direction);
         if !self.is_game_running() {
-            println!("{:?}!", self.game_state);
+            game_over_writer.send(GameOver { win: false });
             return;
         }
         if self.was_food_eaten() {
@@ -81,6 +102,7 @@ impl Game {
             self.update_and_notifiy_score(score_writer);
             if !could_spawn_food {
                 self.game_state= GameState::Win;
+                game_over_writer.send(GameOver { win: true });
             }
         }
         self.move_snake_tail();
@@ -244,4 +266,41 @@ fn get_random_head_pos(rng: &mut ThreadRng) -> CellPos {
     let x = rng.gen_range(START_SNAKE_LENGHT..(GRID_SIZE / 2));
     let y = rng.gen_range(0..GRID_SIZE);
     CellPos { x, y }
+}
+
+/// This will create weird (non breaking) behavior if called with a dirty grid
+///
+/// Meaning that grid should be empty
+///
+/// See `Grid::new_empty_grid` and `Grid::clear_grid`
+fn get_random_game_start(grid: &mut Grid) -> GameInitialization {
+    let mut rng = rand::thread_rng();
+    let head_pos = get_random_head_pos(&mut rng);
+    let tail_pos = CellPos {
+        x: head_pos.x + 1 - START_SNAKE_LENGHT,
+        y: head_pos.y
+    };
+    for offset in 0..START_SNAKE_LENGHT {
+        grid.set_cell(Cell {
+            pos: CellPos { x: tail_pos.x + offset, y: tail_pos.y },
+            content: CellContent::SnakeBody { age: (START_SNAKE_LENGHT - offset) as Sze }
+        });
+    }
+    let food_pos = CellPos {
+        x: (GRID_SIZE - head_pos.x) / 2,
+        y: rng.gen_range(0..GRID_SIZE)
+    };
+    grid.set_cell(Cell { pos: food_pos, content: CellContent::Food });
+    let score_multiplier = 1;
+    let eaten_food = START_SNAKE_LENGHT as Sze;
+    GameInitialization {
+        eaten_food: eaten_food,
+        score: eaten_food * score_multiplier * SCORE_BASE,
+        score_multiplier,
+        neck_direction: Direction::Right,
+        game_state: GameState::Running,
+        head_pos,
+        tail_pos,
+        food_pos
+    }
 }
