@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    Game,
+    Sim,
     grid::GRID_SIZE,
     cell::CellPos
 };
@@ -30,7 +30,7 @@ pub fn get_background_shape() -> shape::Box {
     shape::Box::new(BOARD_SIZE.x, BOARD_SIZE.y, 1.0)
 }
 
-pub fn render_game(game: ResMut<Game>, mut gizmos: Gizmos) {
+pub fn render_game(game: ResMut<Sim>, mut gizmos: Gizmos) {
     game.get_occupied_cells().iter().for_each(| cell | {
         render_cell(cell.pos, cell.content.get_color(), &mut gizmos);
     });

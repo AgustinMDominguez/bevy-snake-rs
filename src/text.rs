@@ -53,7 +53,7 @@ impl SnakeTexts {
                         START_GAME_KEY.text
                     ),
                     style: TextStyle {
-                        font: font.clone(),
+                        font,
                         font_size: 24.0,
                         color: Color::BLACK,
                     },
@@ -97,7 +97,7 @@ impl SnakeTexts {
                     TextSection {
                         value: format!("\nPress {} to restart\nPress ESC to exit", RESTART_KEY.text),
                         style: TextStyle {
-                            font: font.clone(),
+                            font,
                             font_size: 20.0,
                             color: Color::BLACK,
                         },

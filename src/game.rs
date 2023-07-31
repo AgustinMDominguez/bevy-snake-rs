@@ -18,7 +18,7 @@ const SCORE_BASE: Sze = 100;
 pub enum GameState { Running, Win, Loss }
 
 #[derive(Resource)]
-pub struct Game {
+pub struct Sim {
     eaten_food: Sze,
     score: Sze,
     score_multiplier: Sze,
@@ -46,7 +46,7 @@ struct GameInitialization {
     food_pos: CellPos
 }
 
-impl Game {
+impl Sim {
     pub fn new_game() -> Self {
         let mut grid = Grid::new_empty_grid();
         let GameInitialization {
@@ -59,7 +59,7 @@ impl Game {
             tail_pos,
             food_pos
         } = get_random_game_start(&mut grid);
-        Game {
+        Sim {
             eaten_food,
             score_multiplier,
             score,
@@ -294,7 +294,7 @@ fn get_random_game_start(grid: &mut Grid) -> GameInitialization {
     let score_multiplier = 1;
     let eaten_food = START_SNAKE_LENGHT as Sze;
     GameInitialization {
-        eaten_food: eaten_food,
+        eaten_food,
         score: eaten_food * score_multiplier * SCORE_BASE,
         score_multiplier,
         neck_direction: Direction::Right,
