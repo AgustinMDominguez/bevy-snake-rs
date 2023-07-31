@@ -85,6 +85,7 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
   - The game crashed when the snake hit a wall
 - `0.6.0`: Implement boost hiting 'space'
 - `0.7.0`: Implement Score
+- `0.8.0`: Implement speed increase and accumulating score
 
 # Features
 
@@ -92,7 +93,7 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
 - [X] Score
 - [ ] Game over screen
 - [ ] Restart button
-- [ ] Variable speed
+- [X] Variable speed
 
 ## Nice to have
 

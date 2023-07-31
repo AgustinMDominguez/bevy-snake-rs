@@ -5,19 +5,22 @@ use crate::{
     Sze,
     Direction,
     utils::min,
-    NewGameScore,
+    FoodEaten,
     grid::{Grid, GRID_SIZE},
     cell::{Cell, CellPos, CellContent},
 };
 
 pub const START_SNAKE_LENGHT: usize = 3;
+const SCORE_BASE: Sze = 100;
 
 #[derive(Debug, PartialEq)]
 enum GameState { Running, Win, Loss }
 
 #[derive(Resource)]
 pub struct Game {
+    eaten_food: Sze,
     score: Sze,
+    score_multiplier: Sze,
     neck_direction: Direction,
     game_state: GameState,
     grid: Grid,
@@ -51,18 +54,22 @@ impl Game {
             y: rng.gen_range(0..GRID_SIZE)
         };
         grid.set_cell(Cell { pos: food_pos, content: CellContent::Food });
+        let score_multiplier = 1;
+        let eaten_food = START_SNAKE_LENGHT as Sze;
         Game {
+            eaten_food,
+            score_multiplier,
+            score: eaten_food * score_multiplier * SCORE_BASE,
+            neck_direction: Direction::Right,
+            game_state: GameState::Running,
             grid,
             head_pos,
             tail_pos,
             food_pos,
-            score: START_SNAKE_LENGHT as Sze,
-            neck_direction: Direction::Right,
-            game_state: GameState::Running
         }
     }
 
-    pub fn run_next_step(&mut self, input_direction: Direction, mut score_writer: EventWriter<NewGameScore>) {
+    pub fn run_next_step(&mut self, input_direction: Direction, score_writer: EventWriter<FoodEaten>) {
         self.age_snake_body();
         self.move_snake_head(input_direction);
         if !self.is_game_running() {
@@ -71,14 +78,22 @@ impl Game {
         }
         if self.was_food_eaten() {
             let could_spawn_food = self.spawn_food();
-            self.score += 1;
-            score_writer.send(NewGameScore { score: self.score * 100 });
+            self.update_and_notifiy_score(score_writer);
             if !could_spawn_food {
                 self.game_state= GameState::Win;
             }
         }
         self.move_snake_tail();
         self.log_game_state_if_finished();
+    }
+
+    fn update_and_notifiy_score(&mut self, mut score_writer: EventWriter<FoodEaten>) {
+        self.eaten_food += 1;
+        if self.eaten_food % 10 == 0 {
+            self.score_multiplier += 1;
+        }
+        self.score += SCORE_BASE * self.score_multiplier;
+        score_writer.send(FoodEaten { new_score: self.score, pieces_eaten: self.eaten_food });
     }
 
     fn age_snake_body(&mut self) {
@@ -142,7 +157,7 @@ impl Game {
 
     fn move_snake_tail(&mut self) {
         let cur_tail = self.get_tail();
-        if self.score < cur_tail.age {
+        if self.eaten_food < cur_tail.age {
             let new_tail = self.get_oldest_tail_neighbor();
             self.grid.clear_cell(cur_tail.pos);
             self.tail_pos = new_tail;

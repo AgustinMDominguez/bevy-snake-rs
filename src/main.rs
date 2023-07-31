@@ -6,6 +6,7 @@ mod utils;
 mod render;
 
 use std::collections::HashMap;
+use std::time::Duration;
 
 use bevy::prelude::*;
 use bevy::DefaultPlugins;
@@ -32,8 +33,9 @@ struct PlayerInput {
 }
 
 #[derive(Event)]
-pub struct NewGameScore{
-    pub score: Sze
+pub struct FoodEaten {
+    pub pieces_eaten: Sze,
+    pub new_score: Sze
 }
 
 pub struct SnakePlugin;
@@ -76,7 +78,7 @@ fn game_update(
     input: ResMut<PlayerInput>,
     time: Res<Time>,
     mut tick_timer: ResMut<StepTimer>,
-    score_writer: EventWriter<NewGameScore>,
+    score_writer: EventWriter<FoodEaten>,
     mut boost_timer: ResMut<BoostTimer>,
     keyboard_input: Res<Input<KeyCode>>
 ) {
@@ -91,15 +93,34 @@ fn game_update(
 
 fn score_update(
     texts: ResMut<SnakeTexts>,
-    mut events: EventReader<NewGameScore>,
+    mut events: EventReader<FoodEaten>,
     mut score_text_query: Query<(Entity, &mut Text)>
 ) {
     if !events.is_empty() {
         if let Ok(mut text) = score_text_query.get_component_mut::<Text>(texts.score) {
             for event in events.iter() {
-                text.sections[0].value = event.score.to_string();
+                text.sections[0].value = event.new_score.to_string();
             }
         }
+    }
+}
+
+fn speed_update(
+    mut events: EventReader<FoodEaten>,
+    tick_timer: ResMut<StepTimer>
+) {
+    if let Some(event) = events.iter().next() {
+        if event.pieces_eaten % 5 == 0 {
+            increase_speed(tick_timer);
+        }
+    }
+}
+
+fn increase_speed(mut tick_timer: ResMut<StepTimer>) {
+    let min_duration = Duration::from_secs_f32(0.1);
+    let new_duration = tick_timer.0.duration() - Duration::from_secs_f32(0.06);
+    if new_duration > min_duration {
+        tick_timer.0.set_duration(new_duration)
     }
 }
 
@@ -110,12 +131,13 @@ impl Plugin for SnakePlugin {
             .insert_resource(StepTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
             .insert_resource(BoostTimer(Timer::from_seconds(0.08, TimerMode::Repeating)))
             .insert_resource(SnakeTexts::new())
-            .add_event::<NewGameScore>()
+            .add_event::<FoodEaten>()
             .add_systems(Startup, setup)
             .add_systems(Update, (
                 game_update,
                 input_update,
                 score_update,
+                speed_update,
                 render_game.after(game_update)
             )
         );
