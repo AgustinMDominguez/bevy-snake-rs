@@ -86,19 +86,24 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
 - `0.6.0`: Implement boost hiting 'space'
 - `0.7.0`: Implement Score
 - `0.8.0`: Implement speed increase and accumulating score
+- `0.9.0`: Implement
+  - Start/Game over menu
+  - Sound effects
+  - Pause Button
+  - Restart button
 
 # Features
 
 - [X] Basic snake game
 - [X] Score
-- [ ] Game over screen
-- [ ] Restart button
+- [X] Game over screen
+- [X] Restart button
 - [X] Variable speed
 
 ## Nice to have
 
 - [X] Speed up with hold button
-- [ ] Sound effects
+- [X] Sound effects
 
 # Known bugs
 
