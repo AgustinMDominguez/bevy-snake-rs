@@ -91,31 +91,23 @@ fn update_start_menu(
     }
 }
 
-fn update_pause_menu(
-    commands: Commands,
-    keyboard_input: Res<Input<KeyCode>>,
-    mut game: ResMut<Game>,
-    mut texts: ResMut<SnakeTexts>,
-) {
-    let on_paused_menu = matches!(game.state, GameState::Paused);
-    if on_paused_menu && keyboard_input.just_pressed(PAUSE_GAME_KEY.keycode) {
-        texts.despawn_paused_text(commands);
-        game.state = GameState::SimulationRunning;
-    }
-}
-
-fn pause_listener(
+fn update_pause(
     commands: Commands,
     asset_server: Res<AssetServer>,
     mut keyboard_input: ResMut<Input<KeyCode>>,
     mut game: ResMut<Game>,
     mut texts: ResMut<SnakeTexts>,
 ) {
-    let game_running = matches!(game.state, GameState::SimulationRunning);
-    if game_running && keyboard_input.just_pressed(PAUSE_GAME_KEY.keycode) {
-        keyboard_input.clear_just_pressed(PAUSE_GAME_KEY.keycode);
-        texts.spawn_paused_text(commands, asset_server);
-        game.state = GameState::Paused;
+    if keyboard_input.just_pressed(PAUSE_GAME_KEY.keycode) {
+        if matches!(game.state, GameState::SimulationRunning) {
+            texts.spawn_paused_text(commands, asset_server);
+            game.state = GameState::Paused;
+            keyboard_input.clear_just_pressed(PAUSE_GAME_KEY.keycode);
+        } else if matches!(game.state, GameState::Paused) {
+            texts.despawn_paused_text(commands);
+            game.state = GameState::SimulationRunning;
+            keyboard_input.clear_just_pressed(PAUSE_GAME_KEY.keycode);
+        }
     }
 }
 
@@ -234,8 +226,7 @@ impl Plugin for SnakePlugin {
             .add_systems(Update, (
                 update_start_menu,
                 update_simulation,
-                update_pause_menu,
-                pause_listener,
+                update_pause,
                 update_game_over_menu,
                 input_update,
                 score_update,

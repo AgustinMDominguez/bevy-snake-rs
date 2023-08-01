@@ -26,7 +26,6 @@ pub struct DirectionQueue {
 }
 
 impl DirectionQueue {
-
     pub fn new() -> Self {
         DirectionQueue { next: None, queued_1: None, queued_2: None }
     }
