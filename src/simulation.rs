@@ -72,7 +72,7 @@ impl Sim {
         }
     }
 
-    pub fn set_random_initial_state(&mut self) {
+    pub fn reset_new_game(&mut self) {
         self.grid.clear_grid();
         let new_game = get_random_sim_start(&mut self.grid);
         self.eaten_food = new_game.eaten_food;
@@ -124,7 +124,7 @@ impl Sim {
                 CellContent::Food => {},
                 CellContent::SnakeBody { age } => {
                     self.grid.set_cell(Cell {
-                        pos: cell.pos,
+                        position: cell.position,
                         content: CellContent::SnakeBody { age: age + 1 }
                     });
                 }
@@ -156,7 +156,7 @@ impl Sim {
             self.game_state = SimState::Loss;
             return;
         }
-        self.grid.set_cell(Cell { pos: head_pos, content: CellContent::SnakeBody { age: 1 } });
+        self.grid.set_cell(Cell { position: head_pos, content: CellContent::SnakeBody { age: 1 } });
         self.neck_direction = move_dir;
         self.head_pos = head_pos;
     }
@@ -218,7 +218,7 @@ impl Sim {
         for _ in 1..20 {
             let food_pos = CellPos { x: rng.gen_range(0..GRID_SIZE), y: rng.gen_range(0..GRID_SIZE) };
             if self.grid.get_cell_content(food_pos).is_none() {
-                self.grid.set_cell(Cell { pos: food_pos, content: CellContent::Food });
+                self.grid.set_cell(Cell { position: food_pos, content: CellContent::Food });
                 self.food_pos = food_pos;
                 is_food_spawned = true;
                 break;
@@ -226,7 +226,7 @@ impl Sim {
         }
         if !is_food_spawned {
             if let Some(&food_pos) = self.get_empty_cells_around_tail().choose(&mut rng) {
-                self.grid.set_cell(Cell { pos: food_pos, content: CellContent::Food });
+                self.grid.set_cell(Cell { position: food_pos, content: CellContent::Food });
                 self.food_pos = food_pos;
                 is_food_spawned = true;
             };
@@ -287,7 +287,7 @@ fn get_random_sim_start(grid: &mut Grid) -> GameInitialization {
     };
     for offset in 0..START_SNAKE_LENGHT {
         grid.set_cell(Cell {
-            pos: CellPos { x: tail_pos.x + offset, y: tail_pos.y },
+            position: CellPos { x: tail_pos.x + offset, y: tail_pos.y },
             content: CellContent::SnakeBody { age: (START_SNAKE_LENGHT - offset) as Sze }
         });
     }
@@ -295,7 +295,7 @@ fn get_random_sim_start(grid: &mut Grid) -> GameInitialization {
         x: (GRID_SIZE + head_pos.x) / 2,
         y: rng.gen_range(0..GRID_SIZE)
     };
-    grid.set_cell(Cell { pos: food_pos, content: CellContent::Food });
+    grid.set_cell(Cell { position: food_pos, content: CellContent::Food });
     let score_multiplier = 1;
     let eaten_food = START_SNAKE_LENGHT as Sze;
     GameInitialization {

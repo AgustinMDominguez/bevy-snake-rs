@@ -3,22 +3,23 @@ use bevy::prelude::{Resource, KeyCode, ResMut, Res, Input};
 
 use crate::utils::Direction;
 
-pub const BOOST_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::Space, text: "Space" };
-pub const START_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::M, text: "M" };
-pub const RESTART_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::R, text: "R" };
-pub const PAUSE_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::P, text: "P" };
+pub const BOOST_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::Space, str: "Space" };
+pub const START_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::M, str: "M" };
+pub const RESTART_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::R, str: "R" };
+pub const PAUSE_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::P, str: "P" };
 
 pub struct CommandKey {
     pub keycode: KeyCode,
-    pub text: &'static str
+    pub str: &'static str
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct PlayerInput {
     pub input_direction: DirectionQueue,
-    pub boost_active: bool,
+    pub is_boost_active: bool,
 }
 
+#[derive(Default)]
 pub struct DirectionQueue {
     next: Option<Direction>,
     queued_1: Option<Direction>,
@@ -26,10 +27,6 @@ pub struct DirectionQueue {
 }
 
 impl DirectionQueue {
-    pub fn new() -> Self {
-        DirectionQueue { next: None, queued_1: None, queued_2: None }
-    }
-
     pub fn push(&mut self, dir: Direction) {
         if self.next.is_none() {
             self.next = Some(dir);
@@ -66,7 +63,7 @@ impl DirectionQueue {
     }
 }
 
-pub fn input_update(mut input: ResMut<PlayerInput>, keyboard_input: Res<Input<KeyCode>>) {
+pub fn handle_player_input(mut input: ResMut<PlayerInput>, keyboard_input: Res<Input<KeyCode>>) {
     let dir_map = HashMap::from([
         (KeyCode::Up, Direction::Up),
         (KeyCode::Down, Direction::Down),
@@ -81,5 +78,5 @@ pub fn input_update(mut input: ResMut<PlayerInput>, keyboard_input: Res<Input<Ke
             }
         }
     }
-    input.boost_active = keyboard_input.pressed(BOOST_GAME_KEY.keycode);
+    input.is_boost_active = keyboard_input.pressed(BOOST_GAME_KEY.keycode);
 }

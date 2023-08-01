@@ -5,6 +5,8 @@
 
 This is a toy game to learn about game development, the Rust programming language, and the game engine Bevy.
 
+![Demo](assets/repo/demo.gif)
+
 ## How to Run
 
 ### Install Rust enviroment
@@ -93,6 +95,8 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
   - Restart button
 - `0.9.1`: Bug Fix
   - When the food spawned ON the snake, the game panicked
+- `1.0.0`: Release
+  - Updated the colors
 
 # Features
 
@@ -100,14 +104,15 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
 - [X] Score
 - [X] Game over screen
 - [X] Restart button
-- [X] Variable speed
+- [X] Increasing speed
 
 ## Nice to have
 
 - [X] Speed up with hold button
 - [X] Sound effects
+- [X] Pause button
 
-# Known bugs
+# Known/Fixed bugs
 
 - [X] Game crashes when snake hits a wall
 - [X] Sometimes food doesn't spawn

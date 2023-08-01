@@ -1,13 +1,8 @@
-use std::fmt::Debug;
-
 use bevy::prelude::Component;
 
 use crate::cell::{Cell, CellPos, CellContent};
 
 pub const GRID_SIZE: usize = 15;
-
-#[derive(Debug)]
-pub struct OutOfBoundsError;
 
 #[derive(Component)]
 pub struct Grid {
@@ -22,7 +17,7 @@ impl Grid {
     pub fn is_cell_empty(&self, pos: CellPos) -> bool { self.arr[pos.x][pos.y].is_none() }
 
     pub fn set_cell(&mut self, cell: Cell) {
-        self.arr[cell.pos.x][cell.pos.y] = Some(cell.content);
+        self.arr[cell.position.x][cell.position.y] = Some(cell.content);
     }
 
     pub fn clear_cell(&mut self, pos: CellPos) {
@@ -42,7 +37,7 @@ impl Grid {
         for x in 0..GRID_SIZE {
             for y in 0..GRID_SIZE {
                 if let Some(content) = self.arr[x][y] {
-                    ret_cells.push(Cell { pos: CellPos { x, y }, content });
+                    ret_cells.push(Cell { position: CellPos { x, y }, content });
                 }
             }
         }

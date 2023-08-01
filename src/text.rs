@@ -18,15 +18,6 @@ pub struct SnakeTexts {
 }
 
 impl SnakeTexts {
-    pub fn new() -> Self {
-        SnakeTexts {
-            score: Entity::PLACEHOLDER,
-            game_over: Entity::PLACEHOLDER,
-            start: Entity::PLACEHOLDER,
-            pause: Entity::PLACEHOLDER,
-        }
-    }
-
     pub fn initialize(&mut self, mut commands: Commands, asset_server: Res<AssetServer>) {
         let font: Handle<Font> = asset_server.load("fonts/FiraMono-Medium.ttf");
         self.score = commands.spawn(Text2dBundle {
@@ -52,9 +43,9 @@ impl SnakeTexts {
                 sections: vec!(TextSection {
                     value: format!(
                         "\nMove with arrows keys\nPress {} for boost\nPress {} to start\nPress {} to pause",
-                        BOOST_GAME_KEY.text,
-                        START_GAME_KEY.text,
-                        PAUSE_GAME_KEY.text
+                        BOOST_GAME_KEY.str,
+                        START_GAME_KEY.str,
+                        PAUSE_GAME_KEY.str
                     ),
                     style: TextStyle {
                         font,
@@ -91,7 +82,7 @@ impl SnakeTexts {
                         },
                     },
                     TextSection {
-                        value: format!("Press {} to unpause", PAUSE_GAME_KEY.text),
+                        value: format!("Press {} to unpause", PAUSE_GAME_KEY.str),
                         style: TextStyle {
                             font,
                             font_size: 20.0,
@@ -136,7 +127,7 @@ impl SnakeTexts {
                         },
                     },
                     TextSection {
-                        value: format!("\nPress {} to restart\nPress ESC to exit", RESTART_GAME_KEY.text),
+                        value: format!("\nPress {} to restart\nPress ESC to exit", RESTART_GAME_KEY.str),
                         style: TextStyle {
                             font,
                             font_size: 20.0,
@@ -156,6 +147,17 @@ impl SnakeTexts {
     pub fn despawn_game_over_text(&mut self, mut commands: Commands) {
         if self.game_over != Entity::PLACEHOLDER {
             commands.entity(self.game_over).despawn();
+        }
+    }
+}
+
+impl Default for SnakeTexts {
+    fn default() -> Self {
+        SnakeTexts {
+            score: Entity::PLACEHOLDER,
+            game_over: Entity::PLACEHOLDER,
+            start: Entity::PLACEHOLDER,
+            pause: Entity::PLACEHOLDER,
         }
     }
 }

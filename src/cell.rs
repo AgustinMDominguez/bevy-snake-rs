@@ -5,7 +5,7 @@ use crate::grid::GRID_SIZE;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Cell {
-    pub pos: CellPos,
+    pub position: CellPos,
     pub content: CellContent
 }
 
@@ -35,7 +35,7 @@ impl CellPos {
 impl CellContent {
     pub fn get_color(&self) -> Color {
         match self {
-            Self::Food => Color::RED,
+            Self::Food => Color::BLUE,
             Self::SnakeBody { .. } => Color::BLACK
         }
     }

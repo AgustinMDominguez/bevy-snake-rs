@@ -8,19 +8,6 @@ pub struct StepTimers {
 }
 
 impl StepTimers {
-    pub fn new() -> Self {
-        StepTimers{
-            boost_timer: Timer::from_seconds(
-                0.08,
-                TimerMode::Repeating
-            ),
-            tick_timer: Timer::from_seconds(
-                Self::default_tick_time(),
-                TimerMode::Repeating
-            )
-        }
-    }
-
     pub fn increase_tick_speed(&mut self) {
         let min_duration = Duration::from_secs_f32(0.1);
         let new_duration = self.tick_timer.duration() - Duration::from_secs_f32(0.06);
@@ -34,4 +21,19 @@ impl StepTimers {
     }
 
     fn default_tick_time() -> f32 { 0.5 }
+}
+
+impl Default for StepTimers {
+    fn default() -> Self {
+        StepTimers{
+            boost_timer: Timer::from_seconds(
+                0.08,
+                TimerMode::Repeating
+            ),
+            tick_timer: Timer::from_seconds(
+                Self::default_tick_time(),
+                TimerMode::Repeating
+            )
+        }
+    }
 }
