@@ -13,6 +13,7 @@ use bevy::sprite::MaterialMesh2dBundle;
 use input::DirectionQueue;
 
 
+use crate::input::PAUSE_GAME_KEY;
 use crate::{
     timers::StepTimers,
     input::{PlayerInput, input_update, RESTART_GAME_KEY, START_GAME_KEY},
@@ -54,6 +55,7 @@ struct Game {
 pub enum GameState {
     StartMenu,
     SimulationRunning,
+    Paused,
     GameOverMenu,
 }
 
@@ -86,6 +88,34 @@ fn update_start_menu(
     if on_start_menu && keyboard_input.just_pressed(START_GAME_KEY.keycode) {
         texts.despawn_start_menu(commands);
         game.state = GameState::SimulationRunning;
+    }
+}
+
+fn update_pause_menu(
+    commands: Commands,
+    keyboard_input: Res<Input<KeyCode>>,
+    mut game: ResMut<Game>,
+    mut texts: ResMut<SnakeTexts>,
+) {
+    let on_paused_menu = matches!(game.state, GameState::Paused);
+    if on_paused_menu && keyboard_input.just_pressed(PAUSE_GAME_KEY.keycode) {
+        texts.despawn_paused_text(commands);
+        game.state = GameState::SimulationRunning;
+    }
+}
+
+fn pause_listener(
+    commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut keyboard_input: ResMut<Input<KeyCode>>,
+    mut game: ResMut<Game>,
+    mut texts: ResMut<SnakeTexts>,
+) {
+    let game_running = matches!(game.state, GameState::SimulationRunning);
+    if game_running && keyboard_input.just_pressed(PAUSE_GAME_KEY.keycode) {
+        keyboard_input.clear_just_pressed(PAUSE_GAME_KEY.keycode);
+        texts.spawn_paused_text(commands, asset_server);
+        game.state = GameState::Paused;
     }
 }
 
@@ -204,6 +234,8 @@ impl Plugin for SnakePlugin {
             .add_systems(Update, (
                 update_start_menu,
                 update_simulation,
+                update_pause_menu,
+                pause_listener,
                 update_game_over_menu,
                 input_update,
                 score_update,

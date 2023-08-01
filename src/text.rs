@@ -5,7 +5,7 @@ use bevy::{
     text::{Text2dBundle, Text, TextAlignment, BreakLineOn, TextSection, TextStyle}
 };
 
-use crate::render::get_score_transform;
+use crate::{render::get_score_transform, input::PAUSE_GAME_KEY};
 use crate::input::{RESTART_GAME_KEY, START_GAME_KEY, BOOST_GAME_KEY};
 use crate::simulation::START_SNAKE_LENGHT;
 
@@ -13,7 +13,8 @@ use crate::simulation::START_SNAKE_LENGHT;
 pub struct SnakeTexts {
     pub score: Entity,
     pub game_over: Entity,
-    pub start: Entity
+    pub start: Entity,
+    pub pause: Entity,
 }
 
 impl SnakeTexts {
@@ -21,7 +22,8 @@ impl SnakeTexts {
         SnakeTexts {
             score: Entity::PLACEHOLDER,
             game_over: Entity::PLACEHOLDER,
-            start: Entity::PLACEHOLDER
+            start: Entity::PLACEHOLDER,
+            pause: Entity::PLACEHOLDER,
         }
     }
 
@@ -49,13 +51,14 @@ impl SnakeTexts {
             text: Text {
                 sections: vec!(TextSection {
                     value: format!(
-                        "Move with arrows keys\nPress {} for boost\nPress {} to start",
+                        "\nMove with arrows keys\nPress {} for boost\nPress {} to start\nPress {} to pause",
                         BOOST_GAME_KEY.text,
-                        START_GAME_KEY.text
+                        START_GAME_KEY.text,
+                        PAUSE_GAME_KEY.text
                     ),
                     style: TextStyle {
                         font,
-                        font_size: 24.0,
+                        font_size: 20.0,
                         color: Color::BLACK,
                     },
                 }),
@@ -71,6 +74,43 @@ impl SnakeTexts {
     pub fn despawn_start_menu(&mut self, mut commands: Commands) {
         if self.game_over != Entity::PLACEHOLDER {
             commands.entity(self.game_over).despawn();
+        }
+    }
+
+    pub fn spawn_paused_text(&mut self, mut commands: Commands, asset_server: Res<AssetServer>) {
+        let font: Handle<Font> = asset_server.load("fonts/FiraMono-Medium.ttf");
+        self.pause = commands.spawn(Text2dBundle {
+            text: Text {
+                sections: vec!(
+                    TextSection {
+                        value: "Paused\n".to_string(),
+                        style: TextStyle {
+                            font: font.clone(),
+                            font_size: 50.0,
+                            color: Color::BLACK,
+                        },
+                    },
+                    TextSection {
+                        value: format!("Press {} to unpause", PAUSE_GAME_KEY.text),
+                        style: TextStyle {
+                            font,
+                            font_size: 20.0,
+                            color: Color::BLACK,
+                        },
+                    }
+                ),
+                alignment: TextAlignment::Center,
+                linebreak_behavior: BreakLineOn::WordBoundary,
+            },
+            transform: Transform::from_xyz(0.0, 0.0, 2.0),
+            text_anchor: Anchor::Center,
+            ..Default::default()
+        }).id()
+    }
+
+    pub fn despawn_paused_text(&mut self, mut commands: Commands) {
+        if self.game_over != Entity::PLACEHOLDER {
+            commands.entity(self.pause).despawn();
         }
     }
 

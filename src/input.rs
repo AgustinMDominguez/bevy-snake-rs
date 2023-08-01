@@ -6,6 +6,7 @@ use crate::utils::Direction;
 pub const BOOST_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::Space, text: "Space" };
 pub const START_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::M, text: "M" };
 pub const RESTART_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::R, text: "R" };
+pub const PAUSE_GAME_KEY: CommandKey = CommandKey { keycode: KeyCode::P, text: "P" };
 
 pub struct CommandKey {
     pub keycode: KeyCode,
@@ -15,7 +16,7 @@ pub struct CommandKey {
 #[derive(Resource)]
 pub struct PlayerInput {
     pub input_direction: DirectionQueue,
-    pub boost_active: bool
+    pub boost_active: bool,
 }
 
 pub struct DirectionQueue {

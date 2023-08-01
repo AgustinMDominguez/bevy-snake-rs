@@ -292,7 +292,7 @@ fn get_random_sim_start(grid: &mut Grid) -> GameInitialization {
         });
     }
     let food_pos = CellPos {
-        x: (GRID_SIZE - head_pos.x) / 2,
+        x: (GRID_SIZE - head_pos.x) / 2, // Bug here?
         y: rng.gen_range(0..GRID_SIZE)
     };
     grid.set_cell(Cell { pos: food_pos, content: CellContent::Food });
