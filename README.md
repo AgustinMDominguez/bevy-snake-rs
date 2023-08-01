@@ -91,6 +91,8 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
   - Sound effects
   - Pause Button
   - Restart button
+- `0.9.1`: Bug Fix
+  - When the food spawned ON the snake, the game panicked
 
 # Features
 
@@ -109,4 +111,4 @@ Bevy a is 2D/3D Game engine in very early development, and at time of writing it
 
 - [X] Game crashes when snake hits a wall
 - [X] Sometimes food doesn't spawn
-- [ ] Sometimes the games panics on spawn
+- [X] Sometimes the games panics on spawn
