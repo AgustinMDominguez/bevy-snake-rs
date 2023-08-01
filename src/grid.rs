@@ -4,7 +4,7 @@ use bevy::prelude::Component;
 
 use crate::cell::{Cell, CellPos, CellContent};
 
-pub const GRID_SIZE: usize = 20;
+pub const GRID_SIZE: usize = 15;
 
 #[derive(Debug)]
 pub struct OutOfBoundsError;

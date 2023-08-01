@@ -3,19 +3,19 @@ use bevy::prelude::{Resource, EventWriter};
 
 use crate::{
     Sze,
-    Direction,
-    utils::min,
     FoodEaten,
-    GameOver,
+    SimulationOver,
+    utils::{min, Direction},
     grid::{Grid, GRID_SIZE},
     cell::{Cell, CellPos, CellContent},
+    input::DirectionQueue,
 };
 
 pub const START_SNAKE_LENGHT: usize = 3;
 const SCORE_BASE: Sze = 100;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum GameState { Running, Win, Loss }
+pub enum SimState { Running, Win, Loss }
 
 #[derive(Resource)]
 pub struct Sim {
@@ -23,7 +23,7 @@ pub struct Sim {
     score: Sze,
     score_multiplier: Sze,
     neck_direction: Direction,
-    game_state: GameState,
+    game_state: SimState,
     grid: Grid,
     head_pos: CellPos,
     tail_pos: CellPos,
@@ -40,14 +40,14 @@ struct GameInitialization {
     score: Sze,
     score_multiplier: Sze,
     neck_direction: Direction,
-    game_state: GameState,
+    game_state: SimState,
     head_pos: CellPos,
     tail_pos: CellPos,
     food_pos: CellPos
 }
 
 impl Sim {
-    pub fn new_game() -> Self {
+    pub fn new_simulation() -> Self {
         let mut grid = Grid::new_empty_grid();
         let GameInitialization {
             eaten_food,
@@ -58,7 +58,7 @@ impl Sim {
             head_pos,
             tail_pos,
             food_pos
-        } = get_random_game_start(&mut grid);
+        } = get_random_sim_start(&mut grid);
         Sim {
             eaten_food,
             score_multiplier,
@@ -74,7 +74,7 @@ impl Sim {
 
     pub fn set_random_initial_state(&mut self) {
         self.grid.clear_grid();
-        let new_game = get_random_game_start(&mut self.grid);
+        let new_game = get_random_sim_start(&mut self.grid);
         self.eaten_food = new_game.eaten_food;
         self.score = new_game.score;
         self.score_multiplier = new_game.score_multiplier;
@@ -87,22 +87,22 @@ impl Sim {
 
     pub fn run_next_step(
         &mut self,
-        input_direction: Direction,
+        input_direction: &mut DirectionQueue,
         score_writer: EventWriter<FoodEaten>,
-        mut game_over_writer: EventWriter<GameOver>
+        mut game_over_writer: EventWriter<SimulationOver>
     ) {
         self.age_snake_body();
         self.move_snake_head(input_direction);
         if !self.is_game_running() {
-            game_over_writer.send(GameOver { win: false });
+            game_over_writer.send(SimulationOver { win: false });
             return;
         }
         if self.was_food_eaten() {
             let could_spawn_food = self.spawn_food();
             self.update_and_notifiy_score(score_writer);
             if !could_spawn_food {
-                self.game_state= GameState::Win;
-                game_over_writer.send(GameOver { win: true });
+                self.game_state= SimState::Win;
+                game_over_writer.send(SimulationOver { win: true });
             }
         }
         self.move_snake_tail();
@@ -132,12 +132,8 @@ impl Sim {
         });
     }
 
-    fn move_snake_head(&mut self, input_direction: Direction) {
-        let move_dir = if input_direction == self.neck_direction.opposite() {
-            self.neck_direction
-        } else {
-            input_direction
-        };
+    fn move_snake_head(&mut self, input_direction: &mut DirectionQueue) {
+        let move_dir = get_move_direction(input_direction, &self.neck_direction);
         let dir_vector = match move_dir {
             Direction::Up => [0, 1],
             Direction::Down => [0, -1],
@@ -148,7 +144,7 @@ impl Sim {
         let iy = (self.head_pos.y as i64) + dir_vector[1];
         let grid_size = GRID_SIZE as i64;
         if ix < 0 || iy < 0 || ix >= grid_size || iy >= grid_size {
-            self.game_state = GameState::Loss;
+            self.game_state = SimState::Loss;
             return;
         }
 
@@ -157,7 +153,7 @@ impl Sim {
 
         let head_pos = CellPos { x, y };
         if self.is_position_occupied_by_snake(head_pos) {
-            self.game_state = GameState::Loss;
+            self.game_state = SimState::Loss;
             return;
         }
         self.grid.set_cell(Cell { pos: head_pos, content: CellContent::SnakeBody { age: 1 } });
@@ -166,7 +162,7 @@ impl Sim {
     }
 
     fn log_game_state_if_finished(&self) {
-        if self.game_state != GameState::Running {
+        if self.game_state != SimState::Running {
             println!("{:?}!", self.game_state);
         }
     }
@@ -259,7 +255,16 @@ impl Sim {
 
     pub fn get_head_position(&self) -> CellPos { self.head_pos }
 
-    pub fn is_game_running(&self) -> bool { self.game_state == GameState::Running }
+    pub fn is_game_running(&self) -> bool { self.game_state == SimState::Running }
+}
+
+fn get_move_direction(dir_queue: &mut DirectionQueue, neck_dir: &Direction) -> Direction {
+    while let Some(input_direction) = dir_queue.pop() {
+        if input_direction != *neck_dir && input_direction != neck_dir.opposite() {
+            return input_direction;
+        }
+    }
+    *neck_dir
 }
 
 fn get_random_head_pos(rng: &mut ThreadRng) -> CellPos {
@@ -273,7 +278,7 @@ fn get_random_head_pos(rng: &mut ThreadRng) -> CellPos {
 /// Meaning that grid should be empty
 ///
 /// See `Grid::new_empty_grid` and `Grid::clear_grid`
-fn get_random_game_start(grid: &mut Grid) -> GameInitialization {
+fn get_random_sim_start(grid: &mut Grid) -> GameInitialization {
     let mut rng = rand::thread_rng();
     let head_pos = get_random_head_pos(&mut rng);
     let tail_pos = CellPos {
@@ -298,7 +303,7 @@ fn get_random_game_start(grid: &mut Grid) -> GameInitialization {
         score: eaten_food * score_multiplier * SCORE_BASE,
         score_multiplier,
         neck_direction: Direction::Right,
-        game_state: GameState::Running,
+        game_state: SimState::Running,
         head_pos,
         tail_pos,
         food_pos

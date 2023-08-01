@@ -6,7 +6,7 @@ use crate::{
     cell::CellPos
 };
 
-const BLOCK_SIZE_PX: f32 = 20.0;
+const BLOCK_SIZE_PX: f32 = 24.0;
 const BORDER_OFFSET: f32 = (BLOCK_SIZE_PX / 2.0) - (BLOCK_SIZE_PX * (GRID_SIZE as f32 / 2.0));
 const HEAD_COLOR: Color = Color::Rgba { red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0 };
 const BLOCK_SIZE: Vec2 = Vec2 { x: BLOCK_SIZE_PX, y: BLOCK_SIZE_PX };

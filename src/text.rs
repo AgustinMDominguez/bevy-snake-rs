@@ -5,7 +5,8 @@ use bevy::{
     text::{Text2dBundle, Text, TextAlignment, BreakLineOn, TextSection, TextStyle}
 };
 
-use crate::{render::get_score_transform, RESTART_KEY, START_GAME_KEY, BOOST_GAME_KEY};
+use crate::render::get_score_transform;
+use crate::input::{RESTART_GAME_KEY, START_GAME_KEY, BOOST_GAME_KEY};
 use crate::simulation::START_SNAKE_LENGHT;
 
 #[derive(Resource)]
@@ -95,7 +96,7 @@ impl SnakeTexts {
                         },
                     },
                     TextSection {
-                        value: format!("\nPress {} to restart\nPress ESC to exit", RESTART_KEY.text),
+                        value: format!("\nPress {} to restart\nPress ESC to exit", RESTART_GAME_KEY.text),
                         style: TextStyle {
                             font,
                             font_size: 20.0,
